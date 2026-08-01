@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Your Patch - The Gnome Pear Club</title>
+  <meta name="description" content="Check in at your tree, earn pears, and grow your seed bank. A working prototype of the Gnome Pear Club loop.">
+  <meta name="theme-color" content="#f4efe1">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,800&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --cream: #f4efe1; --cream-2: #ede6d3; --ink: #33301f; --ink-soft: #6b6650;
+      --forest: #3f6b4c; --forest-deep: #2b4d37; --pear: #d9a94b; --pear-deep: #b9832e;
+      --blush: #d98b6b; --line: rgba(51,48,31,0.12);
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Nunito', system-ui, sans-serif; background: var(--cream); color: var(--ink);
+      line-height: 1.6; -webkit-font-smoothing: antialiased; }
+    h1, h2, h3 { font-family: 'Fraunces', Georgia, serif; }
+    .wrap { max-width: 820px; margin: 0 auto; padding: 0 20px; }
+    a { color: var(--forest-deep); }
+    /* top bar */
+    .bar { position: sticky; top: 0; z-index: 20; background: rgba(244,239,225,0.92);
+      backdrop-filter: blur(8px); border-bottom: 1px solid var(--line); }
+    .bar-in { display: flex; align-items: center; justify-content: space-between;
+      max-width: 820px; margin: 0 auto; padding: 12px 20px; }
+    .brand { font-family: 'Fraunces', serif; font-weight: 800; color: var(--forest-deep);
+      font-size: 1rem; text-decoration: none; }
+    .pears-pill { display: inline-flex; align-items: center; gap: 7px; background: var(--pear);
+      color: #3a2a08; font-weight: 800; padding: 7px 15px; border-radius: 999px; font-size: 0.95rem; }
+    /* profile */
+    .hi { text-align: center; padding: 34px 20px 8px; }
+    .hi h1 { font-size: clamp(1.6rem, 5vw, 2.3rem); color: var(--forest-deep); }
+    .hi .streak { color: var(--ink-soft); margin-top: 4px; font-weight: 700; }
+    /* level */
+    .level { max-width: 480px; margin: 18px auto 0; }
+    .level-row { display: flex; justify-content: space-between; font-size: 0.8rem;
+      font-weight: 700; color: var(--ink-soft); margin-bottom: 6px; }
+    .track { height: 12px; background: var(--cream-2); border: 1px solid var(--line);
+      border-radius: 999px; overflow: hidden; }
+    .fill { height: 100%; background: linear-gradient(90deg, var(--forest), var(--pear));
+      border-radius: 999px; transition: width .5s ease; width: 0; }
+    /* tree */
+    .tree-card { text-align: center; padding: 24px 20px 8px; }
+    .tree { font-size: 5.5rem; line-height: 1; cursor: pointer; user-select: none;
+      transition: transform .12s ease; display: inline-block; filter: drop-shadow(0 8px 14px rgba(43,77,55,0.18)); }
+    .tree:active { transform: scale(0.92); }
+    .tree.rest { cursor: default; opacity: 0.85; }
+    .tree-hint { color: var(--ink-soft); margin-top: 10px; font-weight: 700; min-height: 24px; }
+    .checkin-btn { margin-top: 14px; background: var(--forest); color: #fff; border: none;
+      font-weight: 800; font-size: 1.05rem; padding: 14px 34px; border-radius: 999px; cursor: pointer;
+      box-shadow: 0 8px 20px rgba(63,107,76,0.28); font-family: 'Nunito', sans-serif; }
+    .checkin-btn:disabled { background: var(--cream-2); color: var(--ink-soft); box-shadow: none; cursor: default; }
+    /* seed bank */
+    .section { padding: 34px 0 10px; }
+    .section h2 { text-align: center; color: var(--forest-deep); font-size: 1.5rem; margin-bottom: 4px; }
+    .section .sub { text-align: center; color: var(--ink-soft); margin-bottom: 22px; font-size: 0.96rem; }
+    .bank { display: grid; gap: 14px; grid-template-columns: 1fr; }
+    @media (min-width: 620px) { .bank { grid-template-columns: repeat(3, 1fr); } }
+    .seed { background: #fff; border: 1px solid var(--line); border-radius: 18px;
+      padding: 20px 18px; text-align: center; }
+    .seed .emoji { font-size: 2.2rem; }
+    .seed h3 { font-size: 1.05rem; color: var(--forest-deep); margin: 8px 0 2px; }
+    .seed .rarity { font-size: 0.72rem; font-weight: 800; letter-spacing: 0.08em;
+      text-transform: uppercase; color: var(--pear-deep); }
+    .seed .cost { margin: 10px 0; font-weight: 800; color: var(--ink); }
+    .buy { width: 100%; border: 1.5px solid var(--forest); background: transparent;
+      color: var(--forest-deep); font-weight: 800; padding: 9px; border-radius: 10px; cursor: pointer;
+      font-family: 'Nunito', sans-serif; font-size: 0.92rem; }
+    .buy:hover:not(:disabled) { background: var(--forest); color: #fff; }
+    .buy:disabled { opacity: 0.45; cursor: default; border-color: var(--line); }
+    .buy.owned { background: var(--cream-2); border-color: var(--cream-2); color: var(--ink-soft); }
+    /* collection */
+    .collection { text-align: center; color: var(--ink-soft); padding: 8px 20px 40px; }
+    .collection .items { font-size: 1.8rem; margin-top: 8px; letter-spacing: 4px; }
+    .toast { position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%) translateY(120px);
+      background: var(--forest-deep); color: #fff; padding: 12px 22px; border-radius: 999px;
+      font-weight: 700; transition: transform .3s ease; z-index: 60; }
+    .toast.show { transform: translateX(-50%) translateY(0); }
+    .reset { display: block; margin: 0 auto 30px; background: none; border: none; color: var(--ink-soft);
+      font-size: 0.8rem; text-decoration: underline; cursor: pointer; opacity: 0.6; }
+  </style>
+</head>
+<body>
+  <div class="bar"><div class="bar-in">
+    <a class="brand" href="index.html">Gnome Pear Club</a>
+    <span class="pears-pill"><span id="pearIcon">pears</span> <b id="pearCount">0</b></span>
+  </div></div>
+
+  <div class="hi">
+    <h1 id="greeting">Welcome, gnome</h1>
+    <div class="streak" id="streak">Day 1 - plant your roots</div>
+    <div class="level wrap">
+      <div class="level-row"><span id="levelLabel">Sprout</span><span id="levelNext"></span></div>
+      <div class="track"><div class="fill" id="levelFill"></div></div>
+    </div>
+  </div>
+
+  <div class="tree-card">
+    <div class="tree" id="tree">tree</div>
+    <div class="tree-hint" id="hint">Tap your tree to check in.</div>
+    <button class="checkin-btn" id="checkin">Check in</button>
+  </div>
+
+  <section class="section wrap">
+    <h2>The seed bank</h2>
+    <div class="sub">Spend your pears. Grow what's rare.</div>
+    <div class="bank" id="bank"></div>
+  </section>
+
+  <div class="collection wrap">
+    <div>Your patch</div>
+    <div class="items" id="patch">-</div>
+    <button class="reset" id="reset">reset my patch</button>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+  (function () {
+    var KEY = 'gpc-state-v1';
+    var SEEDS = [
+      { id: 'heirloom-tomato', emoji: '&#127813;', name: 'Heirloom Tomato', rarity: 'common', cost: 30 },
+      { id: 'moon-carrot', emoji: '&#129365;', name: 'Moon Carrot', rarity: 'uncommon', cost: 60 },
+      { id: 'sun-corn', emoji: '&#127805;', name: 'Sun Corn', rarity: 'uncommon', cost: 80 },
+      { id: 'gnome-cap', emoji: '&#127812;', name: 'Gnome-Cap Mushroom', rarity: 'rare', cost: 150 },
+      { id: 'wild-pear', emoji: '&#127824;', name: 'Wild Pear Cutting', rarity: 'rare', cost: 180 },
+      { id: 'first-seed', emoji: '&#127793;', name: 'The First Seed', rarity: 'legendary', cost: 400 }
+    ];
+    var LEVELS = [
+      { name: 'Sprout', at: 0 }, { name: 'Seedling', at: 50 }, { name: 'Gardener', at: 150 },
+      { name: 'Cultivator', at: 350 }, { name: 'Seed Keeper', at: 700 }, { name: 'Elder Gnome', at: 1200 }
+    ];
+    var CHECKIN_PEARS = 12;
+
+    function load() {
+      try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch (e) { return {}; }
+    }
+    function save(s) { localStorage.setItem(KEY, JSON.stringify(s)); }
+    function today() { return new Date().toISOString().slice(0, 10); }
+
+    var s = load();
+    if (!s.name) {
+      var n = prompt("What's your gnome name?", 'Pippin');
+      s.name = (n && n.trim()) ? n.trim().slice(0, 24) : 'Gnome';
+      s.pears = 0; s.totalEarned = 0; s.streak = 0; s.lastCheckin = null; s.owned = [];
+      save(s);
+    }
+    s.owned = s.owned || [];
+
+    var toast = document.getElementById('toast');
+    function say(msg) { toast.innerHTML = msg; toast.classList.add('show');
+      setTimeout(function () { toast.classList.remove('show'); }, 1900); }
+
+    function levelFor(total) {
+      var cur = LEVELS[0], nxt = null;
+      for (var i = 0; i < LEVELS.length; i++) {
+        if (total >= LEVELS[i].at) cur = LEVELS[i];
+        else { nxt = LEVELS[i]; break; }
+      }
+      return { cur: cur, nxt: nxt };
+    }
+
+    function render() {
+      document.getElementById('greeting').textContent = 'Welcome, ' + s.name;
+      document.getElementById('pearCount').textContent = s.pears;
+      var st = s.streak || 0;
+      document.getElementById('streak').textContent = st > 0
+        ? 'Day ' + st + ' streak - keep it green'
+        : 'Day 1 - plant your roots';
+
+      var lv = levelFor(s.totalEarned || 0);
+      document.getElementById('levelLabel').textContent = lv.cur.name;
+      if (lv.nxt) {
+        var span = lv.nxt.at - lv.cur.at;
+        var into = (s.totalEarned || 0) - lv.cur.at;
+        document.getElementById('levelFill').style.width = Math.min(100, (into / span) * 100) + '%';
+        document.getElementById('levelNext').textContent = (lv.nxt.at - (s.totalEarned || 0)) + ' pears to ' + lv.nxt.name;
+      } else {
+        document.getElementById('levelFill').style.width = '100%';
+        document.getElementById('levelNext').textContent = 'max tier';
+      }
+
+      var checked = s.lastCheckin === today();
+      var btn = document.getElementById('checkin');
+      var tree = document.getElementById('tree');
+      if (checked) {
+        btn.disabled = true; btn.textContent = 'Checked in today';
+        document.getElementById('hint').textContent = 'Come back tomorrow to keep your streak.';
+        tree.classList.add('rest');
+      } else {
+        btn.disabled = false; btn.textContent = 'Check in (+' + CHECKIN_PEARS + ' pears)';
+        document.getElementById('hint').textContent = 'Tap your tree to check in.';
+        tree.classList.remove('rest');
+      }
+
+      var bank = document.getElementById('bank');
+      bank.innerHTML = '';
+      SEEDS.forEach(function (seed) {
+        var owned = s.owned.indexOf(seed.id) > -1;
+        var canAfford = s.pears >= seed.cost;
+        var card = document.createElement('div');
+        card.className = 'seed';
+        card.innerHTML =
+          '<div class="emoji">' + seed.emoji + '</div>' +
+          '<div class="rarity">' + seed.rarity + '</div>' +
+          '<h3>' + seed.name + '</h3>' +
+          '<div class="cost">' + seed.cost + ' pears</div>';
+        var b = document.createElement('button');
+        b.className = 'buy' + (owned ? ' owned' : '');
+        b.textContent = owned ? 'In your patch' : 'Redeem';
+        b.disabled = owned || !canAfford;
+        b.addEventListener('click', function () { redeem(seed); });
+        card.appendChild(b);
+        bank.appendChild(card);
+      });
+
+      var patch = s.owned.map(function (id) {
+        var f = SEEDS.filter(function (x) { return x.id === id; })[0];
+        return f ? f.emoji : '';
+      }).join(' ');
+      document.getElementById('patch').innerHTML = patch || '-';
+    }
+
+    function doCheckin() {
+      if (s.lastCheckin === today()) return;
+      var y = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+      s.streak = (s.lastCheckin === y) ? (s.streak || 0) + 1 : 1;
+      s.lastCheckin = today();
+      s.pears = (s.pears || 0) + CHECKIN_PEARS;
+      s.totalEarned = (s.totalEarned || 0) + CHECKIN_PEARS;
+      save(s);
+      say('+' + CHECKIN_PEARS + ' pears &#127813;');
+      render();
+    }
+
+    function redeem(seed) {
+      if (s.owned.indexOf(seed.id) > -1 || s.pears < seed.cost) return;
+      s.pears -= seed.cost;
+      s.owned.push(seed.id);
+      save(s);
+      say(seed.name + ' added to your patch ' + seed.emoji);
+      render();
+    }
+
+    document.getElementById('checkin').addEventListener('click', doCheckin);
+    document.getElementById('tree').addEventListener('click', function () {
+      if (s.lastCheckin !== today()) doCheckin();
+    });
+    document.getElementById('reset').addEventListener('click', function () {
+      if (confirm('Reset your patch? This clears your pears + seeds.')) {
+        localStorage.removeItem(KEY); location.reload();
+      }
+    });
+
+    render();
+  })();
+  </script>
+</body>
+</html>
